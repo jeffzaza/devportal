@@ -125,7 +125,8 @@ h2#site-slogan {
 
 #page > footer,
 #page > footer .block-title {
-  background-color: #f1f5f6;
+  border-top: 4px solid #fff300;
+  background-color: #00a94f;
   color: #010101;
 }
 

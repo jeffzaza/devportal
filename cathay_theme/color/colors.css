@@ -67,7 +67,7 @@ a.active {
 .pager a:hover,
 .pager a:active,
 .pager a:focus {
-	background-color: #5aaafa;
+	background-color: #006941;
 	color: #fff;
 }
 
@@ -128,6 +128,13 @@ h2#site-slogan {
 	border-top: 4px solid #fff300;
 	background-color: #00a94f;
 	color: #010101;
+}
+
+#page > footer .centered_link a {
+	color: #ffffff;
+}
+#page > footer .centered_link a:hover {
+	color: #fff200;
 }
 
 .pagebreadcrumb a,

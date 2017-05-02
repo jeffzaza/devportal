@@ -1,12 +1,12 @@
 //如果指定關閉，則不做任何紀錄
 if (apim.getvariable("request.parameters.debug") != 'false') {
 	//因為ZSweb回傳html/text所以使用buffer來取得
-	apim.readInputAsBuffer(function (error, buf) {
+	apim.readInputAsJSON(function (error, pre_output) {
 		if (error) {
 			// handle error
 		} else {
 			//將buffer轉為JSON Object
-			var pre_output = JSON.parse(buf.toString());
+			//var pre_output = JSON.parse(buf.toString());
 
 			//組合log內容_
 			var log_record = {};
@@ -31,7 +31,7 @@ if (apim.getvariable("request.parameters.debug") != 'false') {
 			//連線設定
 			var urlopen = require("urlopen");
 			//var target = 'http://10.87.50.145/ZSWeb/api/cxl-know-your-customer-api/v1/log';
-			
+
 			var target = 'http://clidemo.mybluemix.net/post_post';
 			var options = {
 				target: target,
@@ -41,18 +41,24 @@ if (apim.getvariable("request.parameters.debug") != 'false') {
 			};
 
 			urlopen.open(options, function (err, response) {
-				/*
 				// If there's something wrong when sending logs, do nothing or the whole API call would be blocked
-				response.readAsJSON(function (error, responseData) {
-					if (error) {
-						throw error;
-					} else {
-						session.output.write(logging);
-						//session.output.write(responseData);
-						apim.output('application/json');
+				if (error) {
+					// an error occurred during the request sending or response header parsing
+					session.output.write("urlopen error: " + JSON.stringify(error));
+				} else {
+					// get the response status code
+					var responseStatusCode = response.statusCode;
+					var responseReasonPhrase = response.reasonPhrase;
+					console.log("Response status code: " + responseStatusCode);
+					console.log("Response reason phrase: " + responseReasonPhrase);
+					// reading response data
+
+					if (responseStatusCode != "200") {
+						urlopen.open(options, function (err, response2) {});
+
 					}
-				});
-				*/
+
+				}
 
 			});
 

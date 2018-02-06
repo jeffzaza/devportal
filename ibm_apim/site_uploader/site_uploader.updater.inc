@@ -85,7 +85,7 @@ class SiteModuleUpdater extends Updater implements DrupalUpdaterInterface {
       $prefixes = array(
         'bannerblock',
         'ghmarkdown',
-        'connect_theme',
+        'cathay_theme',
         'ibm_apim',
         'api',
         'application',
@@ -295,7 +295,7 @@ class SiteThemeUpdater extends Updater implements DrupalUpdaterInterface {
       $prefixes = array(
         'bannerblock',
         'ghmarkdown',
-        'connect_theme',
+        'cathay_theme',
         'ibm_apim',
         'api',
         'application',

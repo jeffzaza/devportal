@@ -4,7 +4,7 @@
 using the Drupal content management system.</p>
 
 <p><code>ibm_apim</code> = a drupal module containing the IBM API Connect integration<br/>
-<code>connect_theme</code> = a configurable drupal theme<br/>
+<code>cathay_theme</code> = a configurable drupal theme<br/>
 <code>ibm_apim_theme</code> = the drupal theme used in APIm v4<br/>
 <code>apic_taxonomy_menu_block</code> = a block to browse a hierarchical taxonomy<br/>
 <code>bannerblock</code> = front page welcome banner block<br/>

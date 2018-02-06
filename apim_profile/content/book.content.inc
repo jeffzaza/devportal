@@ -1988,11 +1988,11 @@ page.</p>
 <div class="section"><h2 class="title sectiontitle">Before you begin</h2>
 <p class="p">You must have administrator access to complete this task.</p>
 
-<p class="p">Download the pre-supplied sample theme, <a class="xref" href="banka_connect_theme_custom_css.zip">banka_connect_theme_custom_css.zip</a>.</p>
+<p class="p">Download the pre-supplied sample theme, <a class="xref" href="banka_cathay_theme_custom_css.zip">banka_cathay_theme_custom_css.zip</a>.</p>
 </div>
 <div class="section"><h2 class="title sectiontitle">Customizing the <span class="ph filepath">overrides.css</span> file</h2>
 <ol class="ol"><li class="li liexpand">Download the <span class="ph filepath">overrides.css</span> file from the pre-supplied sample theme from
-<span class="ph filepath">\banka_connect_theme\css</span>, and open it in your chosen editor.</li>
+<span class="ph filepath">\banka_cathay_theme\css</span>, and open it in your chosen editor.</li>
 <li class="li liexpand">Customize the <span class="ph filepath">overrides.css</span> file by entering hex codes, and pixel values
 when applicable, in the correct positions for the following elements: <dl class="dl"><dt class="dt dlterm">Body of the home page</dt>
 <dd class="dd"><pre class="pre codeblock"><code>body.page-home #columns.no-menu-bar {		
@@ -2024,7 +2024,7 @@ when applicable, in the correct positions for the following elements: <dl class=
 </div>
 <div class="section"><h2 class="title sectiontitle">Implementing the customized <span class="ph filepath">overrides.css</span> file</h2></div>
 <div class="section"><ol class="ol"><li class="li liexpand">After you have finished customizing the <span class="ph filepath">overrides.css</span> file, add it back to
-the compressed file in <span class="ph filepath">\banka_connect_theme\css</span>. </li>
+the compressed file in <span class="ph filepath">\banka_cathay_theme\css</span>. </li>
 <li class="li liexpand">Install the compressed file as a theme in the <span class="ph">Developer Portal</span>. For more
 information, see <a class="xref" href="../com.ibm.apic.devportal.doc/tapim_portal_install_adiitional_themes.html">Installing additional themes</a>.</li>
 <li class="li liexpand">Return to the <span class="ph">Developer Portal</span> home page by

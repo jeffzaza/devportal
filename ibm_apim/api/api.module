@@ -195,6 +195,200 @@ function api_menu() {
   return $items;
 }
 
+/* Permissions that can be granted
+ * Note that we also use permissions defined in product.module
+ */
+define('API_GRANT', 1);
+define('EDIT_ANY_API_CONTENT_GRANT', 1);
+
+/**
+ * Implements hook_node_access_records().
+ *
+ * For API nodes, create a list of grants for the node based on the
+ * products to which the API belongs
+ *
+ * @param $node
+ * @return array
+ *
+ * Note: hook is called when rebuilding permissions
+ */
+function api_node_access_records($node)
+{
+    acl_log('Enter: api_node_access_records');
+
+    $type = is_string($node) ? $node : $node->type;
+    $grants = array();
+    $uniquegrants = array();
+
+    // Only build permissions for API nodes
+    if ($type == 'api') {
+
+        // Create a grant for 'edit any api content'
+        $grants[] = array(
+            'realm' => 'api',
+            'gid' => EDIT_ANY_API_CONTENT_GRANT,
+            'grant_view' => 1,
+            'grant_update' => 0,
+            'grant_delete' => 0,
+            'priority' => 0,
+        );
+
+        // find the list of products to which this api belongs
+        // apiref will be a string like: 'maths:1.0.0'
+        // product_apis_value will be json like: 'a:1:{s:5:"maths";a:1:{s:4:"name";s:11:"maths:1.0.0";}}'
+        // we therefore use SQL LIKE to search
+        $apiref = $node->api_ref[$node->language][0]['value'];
+        $query = db_query("SELECT entity_id FROM {field_data_product_apis} WHERE product_apis_value LIKE '%" . $apiref . "%'");
+        $prods = $query->fetchAll();
+
+        // Now go through and create grants based on each of the products, using the
+        // same scheme as in product_node_access_records (the logic is that if a user
+        // can access any of the products which contain this API, they can view the API)
+        foreach ($prods as $prod) {
+            // Pick up all of the data we need.  Left Joins are used for tables where
+            // there may not be an entry (e.g. if tags or orgs are not defined)
+            $query = db_query("SELECT pub.product_visibility_public_value AS product_visibility_public_value, auth.product_visibility_authenticated_value AS product_visibility_authenticated_value
+, org.product_visibility_custom_orgs_value AS product_visibility_custom_orgs_value, tags.product_visibility_custom_tags_value AS product_visibility_custom_tags_value, view.product_view_enabled_value AS product_view_enabled_value, prref.product_ref_value AS product_ref_value
+FROM 
+field_data_product_visibility_public pub
+INNER JOIN field_data_product_visibility_authenticated auth ON pub.entity_id = auth.entity_id
+LEFT JOIN field_data_product_visibility_custom_orgs org ON pub.entity_id = org.entity_id
+LEFT JOIN field_data_product_visibility_custom_tags tags ON pub.entity_id = tags.entity_id
+LEFT JOIN field_data_product_ref prref ON pub.entity_id = prref.entity_id
+INNER JOIN field_data_product_view_enabled view ON pub.entity_id = view.entity_id
+WHERE  (pub.entity_id = ". $prod->entity_id .")");
+            $results = $query->fetchAll();
+
+            acl_log('DB Search for product '.$prod->entity_id.': '.var_export($results,TRUE));
+
+            // The query will return multiple rows if there are multiple orgs or tags
+            // or if there are multiple products with the same API
+            // This causes duplication of the grants, which we will tidy up after
+            foreach ($results as $row) {
+                // Only create grants if the product is enabled
+                if ($row->product_view_enabled_value == 1) {
+                    // Create a grant for 'edit any product content'
+                    $grants[] = array(
+                        'realm' => 'product',
+                        'gid' => EDIT_ANY_PRODUCT_CONTENT_GRANT,
+                        'grant_view' => 1,
+                        'grant_update' => 0,
+                        'grant_delete' => 0,
+                        'priority' => 0,
+                    );
+                    // Create a grant for public access if public is set
+                    if ($row->product_visibility_public_value == 1) {
+                        $grants[] = array(
+                            'realm' => 'product',
+                            'gid' => PUBLIC_PRODUCT_GRANT,
+                            'grant_view' => 1,
+                            'grant_update' => 0,
+                            'grant_delete' => 0,
+                            'priority' => 0,
+                        );
+                    }
+                    // Create a grant for authenticated access if authenticated is set
+                    if ($row->product_visibility_authenticated_value == 1) {
+                        $grants[] = array(
+                            'realm' => 'product',
+                            'gid' => AUTHENTICATED_PRODUCT_GRANT,
+                            'grant_view' => 1,
+                            'grant_update' => 0,
+                            'grant_delete' => 0,
+                            'priority' => 0,
+                        );
+                    }
+                    // Create a grant for subscription based on product reference
+                    if (isset($row->product_ref_value)) {
+                        $grants[] = array(
+                            'realm' => 'product_ref_' . $row->product_ref_value,
+                            'gid' => SUBSCRIBED_TO_PRODUCT_GRANT,
+                            'grant_view' => 1,
+                            'grant_update' => 0,
+                            'grant_delete' => 0,
+                            'priority' => 0,
+                        );
+                    }
+                    // Create a grant for organisations, as a separate realm based on the
+                    // org uuid.  If there are multiple orgs, then multiple grants each
+                    // with their own realm will be created
+                    if (isset($row->product_visibility_custom_orgs_value)) {
+                        $grants[] = array(
+                            'realm' => 'product_org_' . $row->product_visibility_custom_orgs_value,
+                            'gid' => ORG_PRODUCT_GRANT,
+                            'grant_view' => 1,
+                            'grant_update' => 0,
+                            'grant_delete' => 0,
+                            'priority' => 0,
+                        );
+                    }
+                    // Create a grant for tags, as a separate realm based on the
+                    // tag string.  If there are multiple tags, then multiple grants each
+                    // with their own realm will be created
+                    if (isset($row->product_visibility_custom_tags_value)) {
+                        $grants[] = array(
+                            'realm' => 'product_tag_' . $row->product_visibility_custom_tags_value,
+                            'gid' => TAG_PRODUCT_GRANT,
+                            'grant_view' => 1,
+                            'grant_update' => 0,
+                            'grant_delete' => 0,
+                            'priority' => 0,
+                        );
+                    }
+                }
+            }
+        }
+        // Since multiple grants may have been created (due to the way the db_select
+        // call returns multiple rows), we need to remove any that are duplicated
+        // The code below does this by serialising each member of the grants array
+        // and then using array_unique (which only works on strings) to ensure that
+        // there are no duplicates
+        $uniquegrants = array_map("unserialize", array_unique(array_map("serialize", $grants)));
+        acl_log('Grants:' . var_export($uniquegrants, TRUE));
+    }
+
+    acl_log('Exit: api_node_access_records');
+    return $uniquegrants;
+}
+
+/**
+ * Implements hook_node_grants().
+ *
+ * Note that the vast majority of permissions for APIs are granted to the
+ * user in the product.module, by design; access to APIs is based on access
+ * to the products which use that API
+ *
+ * @param $account
+ * @param $op
+ * @return array
+ *
+ * Note: hook is not called at all when admin logged in
+ * Note: hook is called on every login, logout and page load
+ */
+function api_node_grants($account, $op) {
+
+  acl_log('Enter: api_node_grants');
+
+  if (isset($account) && isset($account->name)) {
+    acl_log('Account: ' . $account->name);
+  }
+  else {
+    acl_log('Account: anonymous');
+  }
+
+  $grants = array();
+
+  // If 'edit any api content' is set, grant EDIT_ANY_API_CONTENT_GRANT
+  if (ibm_apim_explicit_user_access('edit any api content')) {
+    $grants['api'] = array(EDIT_ANY_API_CONTENT_GRANT);
+  }
+
+  acl_log('Grants: ' . var_export($grants, TRUE));
+
+  acl_log('Exit: api_node_grants');
+  return $grants;
+}
+
 /**
  * Implements hook_node_access().
  * This is checking if the specified api is returned from apim, if not it blocks access.
@@ -253,6 +447,7 @@ function api_check_api_access($node) {
  * @param $variables
  */
 function api_preprocess_node(&$variables) {
+  global $user;
   if ($variables['node']->type == 'api' && $variables['view_mode'] == 'teaser') {
     $variables['theme_hook_suggestions'][] = 'node__api__teaser';
   }
@@ -266,6 +461,20 @@ function api_preprocess_node(&$variables) {
     $variables['theme_hook_suggestions'][] = 'node__api__inner';
   }
   if ($variables['node']->type == 'api') {
+    if (isset($variables['api_resources']['und'])) {
+      $variables['api'] = unserialize($variables['api_resources']['und'][0]['value']);
+      $expanded = unserialize($variables['api_expandedschema']['und'][0]['value']);
+    }
+    else {
+      $variables['api'] = unserialize($variables['api_resources'][0]['value']);
+      $expanded = unserialize($variables['api_expandedschema'][0]['value']);
+    }
+    if (isset($expanded) && !empty($expanded)) {
+      $variables['expandedapi'] = $expanded;
+    }
+    else {
+      $variables['expandedapi'] = $variables['api'];
+    }
     $variables['customfields'] = _api_get_custom_fields();
     $showversion = variable_get('ibm_apim_show_versions', 1);
     $versiontext = '';
@@ -274,21 +483,6 @@ function api_preprocess_node(&$variables) {
     }
     $variables['titlelink'] = '<span class="apimTitle"> <a href="' . url('node/' . $variables['node']->nid) . '">' . $variables['title'] . '</a> <span class="versionText">' . $versiontext . '</span></span>';
     if ($variables['view_mode'] == 'full' || $variables['view_mode'] == 'inner') {
-      if (isset($variables['api_resources']['und'])) {
-        $variables['api'] = unserialize($variables['api_resources']['und'][0]['value']);
-        $expanded = unserialize($variables['api_expandedschema']['und'][0]['value']);
-      }
-      else {
-        $variables['api'] = unserialize($variables['api_resources'][0]['value']);
-        $expanded = unserialize($variables['api_expandedschema'][0]['value']);
-      }
-
-      if (isset($expanded) && !empty($expanded)) {
-        $variables['expandedapi'] = $expanded;
-      }
-      else {
-        $variables['expandedapi'] = $variables['api'];
-      }
       $variables['allow_api_testing'] = variable_get('ibm_apim_enable_api_test', 1);
       if (module_exists('forum')) {
         $forumID = taxonomy_get_term_by_name(_api_sanitise_apiname(html_entity_decode($variables['title'], ENT_QUOTES)));
@@ -391,7 +585,7 @@ function api_preprocess_node(&$variables) {
           }
         }
       }
-      if (module_exists('application')) {
+      if (module_exists('application') && user_is_logged_in() && $user->uid != 1) {
         $apps = array();
         $creds = array();
         $redirect_uris = array();
@@ -430,6 +624,7 @@ function api_preprocess_node(&$variables) {
       else {
         $variables['apps'] = array();
         $variables['creds'] = array();
+        $variables['redirect_uris'] = array();
       }
     }
   }
@@ -599,25 +794,27 @@ function api_list_apis() {
  * @return array
  */
 function api_get_linked_pages($apinid) {
-  $finalnids = array();
-  $query = new EntityFieldQuery();
-  $query->entityCondition('entity_type', 'node')
-    ->entityCondition('bundle', 'page')
-    ->fieldCondition('field_all_apis', 'value', 1);
-  $results = $query->execute();
-  if (isset($results) && isset($results['node'])) {
-    foreach ($results['node'] as $item) {
-      $finalnids[] = $item->nid;
+  if (node_type_load('page') != FALSE) {
+    $finalnids = array();
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'node')
+      ->entityCondition('bundle', 'page')
+      ->fieldCondition('field_all_apis', 'value', 1);
+    $results = $query->execute();
+    if (isset($results) && isset($results['node'])) {
+      foreach ($results['node'] as $item) {
+        $finalnids[] = $item->nid;
+      }
     }
-  }
-  $query = new EntityFieldQuery();
-  $query->entityCondition('entity_type', 'node')
-    ->entityCondition('bundle', 'page')
-    ->fieldCondition('field_apis', 'target_id', $apinid);
-  $results = $query->execute();
-  if (isset($results) && isset($results['node'])) {
-    foreach ($results['node'] as $item) {
-      $finalnids[] = $item->nid;
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'node')
+      ->entityCondition('bundle', 'page')
+      ->fieldCondition('field_apis', 'target_id', $apinid);
+    $results = $query->execute();
+    if (isset($results) && isset($results['node'])) {
+      foreach ($results['node'] as $item) {
+        $finalnids[] = $item->nid;
+      }
     }
   }
   return array_unique($finalnids, SORT_NUMERIC);
@@ -668,6 +865,7 @@ function api_createNewAPINode($api, $event) {
   $hostvariable = variable_get('ibm_apim_host');
   $apim_session = &_ibm_apim_get_apim_session();
   $oldtags = array();
+  $language_list = array_keys(locale_language_list('name', TRUE));
 
   if (isset($api['document']['info']) && isset($api['document']['info']['x-ibm-name'])) {
     $xibmname = $api['document']['info']['x-ibm-name'];
@@ -715,7 +913,8 @@ function api_createNewAPINode($api, $event) {
     unset($node->api_xibmname[$node->language]);
     unset($node->api_ref[$node->language]);
     unset($node->api_version[$node->language]);
-    unset($node->api_description[$node->language]);
+    // this one is multi-language so set to empty array
+    $node->api_description = array();
     unset($node->api_context[$node->language]);
     unset($node->api_protocol[$node->language]);
     unset($node->api_security[$node->language]);
@@ -732,12 +931,42 @@ function api_createNewAPINode($api, $event) {
     $node->type = "api";
     node_object_prepare($node); // Sets some defaults. Invokes hook_prepare() and hook_node_prepare().
   }
+  if (isset($api['document']['info']['x-ibm-languages']['title']) && !empty($api['document']['info']['x-ibm-languages']['title'])) {
+    foreach ($api['document']['info']['x-ibm-languages']['title'] as $lang => $lang_array) {
+      $lang = _ibm_apim_convert_lang_name_to_drupal($lang);
+      // if its one of our locales or the root of one of our locales
+      foreach ($language_list as $lang_list_key=>$lang_list_value) {
+        if ($lang == $lang_list_key || $lang == substr($lang_list_key, 0, count($lang))) {
+          $node->title_field[$lang][] = array(
+            'value' => ibm_apim_truncate_string($api['document']['info']['x-ibm-languages']['title'][$lang]),
+            'format' => 'plain_text'
+          );
+        }
+      }
+    }
+  }
   $node->title = ibm_apim_truncate_string($api['document']['info']['title']);
+  // if en wasn't in the x-ibm-languages list then assume it was the root level one
+  if (isset($api['document']['info']['x-ibm-languages']['title']) && !in_array('en', array_keys($api['document']['info']['x-ibm-languages']['title']))) {
+    if (!isset($node->title_field['en'])) {
+      $node->title_field['en'] = array();
+    }
+    $node->title_field['en'][] = array(
+      'value' => ibm_apim_truncate_string($api['document']['info']['title']),
+      'format' => 'plain_text'
+    );
+    $node->title_field['und'][] = array(
+      'value' => ibm_apim_truncate_string($api['document']['info']['title']),
+      'format' => 'plain_text'
+    );
+  }
+
   if (!module_exists('workbench_moderation')) {
     $node->status = 1;
   }
   $node->uid = 1;
   $node->language = LANGUAGE_NONE;
+  $node->promote = 0;
 
   $node->api_apimhostname[$node->language][] = array(
     'value' => $hostvariable,
@@ -763,10 +992,47 @@ function api_createNewAPINode($api, $event) {
   if (!isset($api['document']['info']['description']) || empty($api['document']['info']['description'])) {
     $api['document']['info']['description'] = '';
   }
-  $node->api_description[$node->language][] = array(
-    'value' => $api['document']['info']['description'],
-    'format' => 'plain_text'
-  );
+
+  if (isset($api['document']['info']['x-ibm-languages']['description']) && !empty($api['document']['info']['x-ibm-languages']['description'])) {
+    foreach ($api['document']['info']['x-ibm-languages']['description'] as $lang => $lang_array) {
+      $lang = _ibm_apim_convert_lang_name_to_drupal($lang);
+      // if its one of our locales or the root of one of our locales
+      foreach ($language_list as $lang_list_key=>$lang_list_value) {
+        if ($lang == $lang_list_key || $lang == substr($lang_list_key, 0, count($lang))) {
+          if (!isset($api['document']['info']['x-ibm-languages']['description'][$lang]) || empty($api['document']['info']['x-ibm-languages']['description'][$lang])) {
+            $api['document']['info']['x-ibm-languages']['description'][$lang] = '';
+          }
+          if (!isset($node->api_description[$lang])) {
+            $node->api_description[$lang] = array();
+          }
+          $node->api_description[$lang][] = array(
+            'value' => $api['document']['info']['x-ibm-languages']['description'][$lang],
+            'format' => 'plain_text'
+          );
+        }
+      }
+    }
+    // if en wasn't in the x-ibm-languages list then assume it was the root level one
+    if (!in_array('en', array_keys($api['document']['info']['x-ibm-languages']['description']))) {
+      if (!isset($node->api_description['en'])) {
+        $node->api_description['en'] = array();
+      }
+      $node->api_description['en'][] = array(
+        'value' => $api['document']['info']['description'],
+        'format' => 'plain_text'
+      );
+      $node->api_description['und'][] = array(
+        'value' => $api['document']['info']['description'],
+        'format' => 'plain_text'
+      );
+    }
+  }
+  else {
+    $node->api_description[$node->language][] = array(
+      'value' => $api['document']['info']['description'],
+      'format' => 'plain_text'
+    );
+  }
   $node->api_context[$node->language][] = array(
     'value' => $api['document']['basePath'],
     'format' => 'plain_text'
@@ -902,6 +1168,7 @@ function api_createNewAPINode($api, $event) {
             )
           )
         );
+        node_save($node);
       }
 
       $blob = mb_substr($data, 0, 5);
@@ -1015,6 +1282,11 @@ function api_createNewAPINode($api, $event) {
     }
   }
 
+  // enable application certificates if we find an API that uses it
+  if (isset($api['document']['x-ibm-configuration']['application-authentication']['certificate']) && $api['document']['x-ibm-configuration']['application-authentication']['certificate'] == true) {
+    variable_set('ibm_apim_application_certificates', 1);
+  }
+
   $phase_tagging = variable_get('ibm_apim_autotag_with_phase', 1);
   if ($phase_tagging == 1) {
     if (isset($api['document']['x-ibm-configuration']['phase'])) {
@@ -1040,8 +1312,26 @@ function api_createNewAPINode($api, $event) {
  */
 function api_updateExistingAPINode($node, $api, $event) {
   $hostvariable = variable_get('ibm_apim_host');
+  $language_list = array_keys(locale_language_list('name', TRUE));
   $apim_session = &_ibm_apim_get_apim_session();
+  if (isset($api['document']['info']['x-ibm-languages']['title']) && !empty($api['document']['info']['x-ibm-languages']['title'])) {
+    foreach ($api['document']['info']['x-ibm-languages']['title'] as $lang => $lang_array) {
+      $lang = _ibm_apim_convert_lang_name_to_drupal($lang);
+      // if its one of our locales or the root of one of our locales
+      foreach ($language_list as $lang_list_key=>$lang_list_value) {
+        if ($lang == $lang_list_key || $lang == substr($lang_list_key, 0, count($lang))) {
+          $node->title_field[$lang][0]['value'] = ibm_apim_truncate_string($api['document']['info']['x-ibm-languages']['title'][$lang]);
+        }
+      }
+    }
+  }
   $node->title = ibm_apim_truncate_string($api['document']['info']['title']);
+  // if en wasn't in the x-ibm-languages list then assume it was the root level one
+  if (isset($api['document']['info']['x-ibm-languages']['title']) && !in_array('en', array_keys($api['document']['info']['x-ibm-languages']['title']))) {
+    $node->title_field['en'][0]['value'] = ibm_apim_truncate_string($api['document']['info']['title']);
+    $node->title_field['und'][0]['value'] = ibm_apim_truncate_string($api['document']['info']['title']);
+  }
+
   $node->api_apimhostname[$node->language][0]['value'] = $hostvariable;
   $node->api_providerid[$node->language][0]['value'] = $apim_session['org'];
   $node->api_environmentid[$node->language][0]['value'] = $apim_session['env'];
@@ -1056,7 +1346,29 @@ function api_updateExistingAPINode($node, $api, $event) {
   if (!isset($api['document']['info']['description']) || empty($api['document']['info']['description'])) {
     $api['document']['info']['description'] = '';
   }
-  $node->api_description[$node->language][0]['value'] = $api['document']['info']['description'];
+  if (isset($api['document']['info']['x-ibm-languages']['description']) && !empty($api['document']['info']['x-ibm-languages']['description'])) {
+    foreach ($api['document']['info']['x-ibm-languages']['description'] as $lang => $lang_array) {
+      $lang = _ibm_apim_convert_lang_name_to_drupal($lang);
+      // if its one of our locales or the root of one of our locales
+      foreach ($language_list as $lang_list_key=>$lang_list_value) {
+        if ($lang == $lang_list_key || $lang == substr($lang_list_key, 0, count($lang))) {
+          if (!isset($api['document']['info']['x-ibm-languages']['description'][$lang]) || empty($api['document']['info']['x-ibm-languages']['description'][$lang])) {
+            $api['document']['info']['x-ibm-languages']['description'][$lang] = '';
+          }
+          $node->api_description[$lang][0]['value'] = $api['document']['info']['x-ibm-languages']['description'][$lang];
+        }
+      }
+    }
+    // if en wasn't in the x-ibm-languages list then assume it was the root level one
+    if (!in_array('en', array_keys($api['document']['info']['x-ibm-languages']['description']))) {
+      $node->api_description['en'][0]['value'] = $api['document']['info']['description'];
+      $node->api_description['und'][0]['value'] = $api['document']['info']['description'];
+    }
+  }
+  else {
+    $node->api_description[$node->language][0]['value'] = $api['document']['info']['description'];
+  }
+
   $node->api_context[$node->language][0]['value'] = $api['document']['basePath'];
   $apitype = 'rest';
   if (isset($api['document']['x-ibm-configuration']['type'])) {
@@ -1194,7 +1506,7 @@ function api_updateExistingAPINode($node, $api, $event) {
             'display' => 1
           );
         }
-
+        node_save($node);
       }
 
       $blob = mb_substr($data, 0, 5);
@@ -1317,6 +1629,11 @@ function api_updateExistingAPINode($node, $api, $event) {
       $node->field_apitags[$node->language] = $currenttags;
       node_save($node);
     }
+  }
+
+  // enable application certificates if we find an API that uses it
+  if (isset($api['document']['x-ibm-configuration']['application-authentication']['certificate']) && $api['document']['x-ibm-configuration']['application-authentication']['certificate'] == true) {
+    variable_set('ibm_apim_application_certificates', 1);
   }
 
   $phase_tagging = variable_get('ibm_apim_autotag_with_phase', 1);
@@ -1475,8 +1792,8 @@ function _api_phase_tag($node, $origphase) {
       $newtags = array();
       if (isset($node->field_apitags[$node->language]) && is_array($node->field_apitags[$node->language])) {
         foreach ($node->field_apitags[$node->language] as $existingtagarray) {
-          if (isset($existingtagarray) && isset($existingtagarray->tid)) {
-            $existingtag = taxonomy_term_load($existingtagarray->tid);
+          if (isset($existingtagarray) && isset($existingtagarray['tid'])) {
+            $existingtag = taxonomy_term_load($existingtagarray['tid']);
             if (isset($existingtag) && (!isset($existingtag->parent) || $existingtag->parent != $phaseparenttid)) {
               $newtags[] = array('tid' => $existingtag->tid);
             }
@@ -1624,7 +1941,8 @@ function _api_create_forum($apiname = NULL, $apidescription = NULL) {
     $type_to_severity = array(
       'status' => WATCHDOG_NOTICE,
       'warning' => WATCHDOG_WARNING,
-      'error' => WATCHDOG_ERROR
+      'error' => WATCHDOG_ERROR,
+      'success' => WATCHDOG_NOTICE
     );
     if (is_array($messages)) {
       foreach ($messages as $type => $type_messages) {

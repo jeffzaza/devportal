@@ -168,7 +168,9 @@
                 config = window.CommonAPI.getConfigurationForOperation(operation, api.paths[path], api);
             }
 
-            var content = window.exampleGenerator.generateCodeSnippets(api, path, verb, operation, config, 'REPLACE_THIS_KEY', 'REPLACE_THIS_KEY');
+            var languages = ["curl", "ruby", "python", "php", "java", "node", "go", "swift", "c", "csharp"];
+            var endpoint = self.getEndpoint(api);
+            var content = window.exampleGenerator.generateCodeSnippets(api, path, verb, operation, config, 'REPLACE_THIS_KEY', 'REPLACE_THIS_KEY', languages, null, endpoint);
 
             var body = null;
             var parameters = [];
@@ -179,14 +181,6 @@
                 parameters = parameters.concat(api.paths[path].parameters);
             }
 
-            // headers
-            var contenttype = null;
-            if (operation.consumes) {
-                contenttype = operation.consumes[0];
-            } else if (api.consumes) {
-                contenttype = api.consumes[0];
-            }
-
             // body
             var bodyParameters = parameters.filter(function (parameter) {
                 return (parameter.in == "body");
@@ -195,7 +189,7 @@
                 // use the first one only
                 // should be inline schema by now
                 try {
-                    var example = window.exampleGenerator.generateExampleParameter(api, path, verb, bodyParameters[0], contenttype, false);
+                    var example = window.exampleGenerator.generateExampleParameter(api, path, verb, bodyParameters[0], null, false);
                     $("#body_" + id + " textarea").val(example).height(150);
                 } catch (e) {
 
@@ -497,7 +491,8 @@
                                     verb: verb,
                                     definition: pathObject[verb]
                                 },
-                                api);
+                                api,
+                                self);
                         }
                     });
                 });
@@ -506,12 +501,50 @@
 
         createTesters();
 
+        function watchEndpoint() {
+            $(".endpointSelect").change(function (event) {
+                event.preventDefault();
+                var endpoint = this.value;
+                if (endpoint) {
+                    self.setEndpoint(endpoint);
+                    var apistring = this.dataset.api;
+                    self.expandedapis.forEach(function (expanded) {
+                        var cleanedapiname = cleanUpClassName(expanded.info["x-ibm-name"] + expanded.info["version"]);
+                        if (cleanedapiname == apistring) {
+                            Object.keys(expanded.paths).forEach(function (path) {
+                                Object.keys(expanded.paths[path]).forEach(function (verb) {
+                                    if (["PUT", "POST", "GET", "DELETE", "OPTIONS", "HEAD", "PATCH"].indexOf(verb.toUpperCase()) != -1) {
+                                        if (!expanded.basePath) {
+                                            expanded.basePath = '';
+                                        }
+                                        populateCodeSnippetsTimeout(expanded, path, verb);
+                                        var exampleid = cleanUpClassName(expanded.info["x-ibm-name"] + expanded.info["version"]) + "_paths_" + cleanUpKey(path) + "_" + verb;
+                                        var tryid = cleanUpClassName(expanded.info["x-ibm-name"] + expanded.info["version"]) + "_" + cleanUpKey(path) + "_" + verb;
+                                        $("#tab-content_example_" + exampleid + " .exampleDefinition").text(verb.toUpperCase() + " " + endpoint + expanded['basePath'] + path);
+                                        $("#tab-content_try_" + tryid + " .apiURL").text(endpoint + expanded['basePath'] + path);
+                                    }
+                                });
+                            });
+                        }
+                    });
+                    setTimeout(function () {
+                        $('.langtab pre').each(function (i, block) {
+                            hljs.highlightBlock(block);
+                        });
+                    }, 0);
+                }
+            });
+        }
+
+        watchEndpoint();
+
         $('.definitionsSection pre code').each(function (i, block) {
             hljs.highlightBlock(block);
         });
     }
 
     API.prototype.test = function (apiname, verb, path) {
+        path = path.replace(/%27/g, "\'");
         var tester = this.testers[apiname + "_" + verb + "_" + path];
         if (tester) {
             tester.test();
@@ -526,6 +559,7 @@
     };
 
     API.prototype.authorize = function (apiname, verb, path) {
+        path = path.replace(/%27/g, "\'");
         var tester = this.testers[apiname + "_" + verb + "_" + path];
         if (tester) {
             tester.authorize();
@@ -540,6 +574,7 @@
     };
 
     API.prototype.getToken = function (apiname, verb, path) {
+        path = path.replace(/%27/g, "\'");
         var tester = this.testers[apiname + "_" + verb + "_" + path];
         if (tester) {
             tester.getToken();
@@ -554,6 +589,7 @@
     };
 
     API.prototype.refreshToken = function (apiname, verb, path) {
+        path = path.replace(/%27/g, "\'");
         var tester = this.testers[apiname + "_" + verb + "_" + path];
         if (tester) {
             tester.refreshToken();
@@ -664,6 +700,28 @@
         }
     };
 
+    API.prototype.getEndpoint = function (api) {
+        if (this.endpoint) {
+            return this.endpoint;
+        } else if (api && api['x-ibm-endpoints'] && api['x-ibm-endpoints'][0] && api['x-ibm-endpoints'][0].endpointUrl) {
+            return api['x-ibm-endpoints'][0].endpointUrl;
+        } else if (api && api.host){
+            var endpoint = "://" + api.host;
+            if (api.schemes) {
+                endpoint = api.schemes[0] + endpoint;
+            } else {
+                endpoint = "https" + endpoint;
+            }
+            return endpoint;
+        } else {
+            return "";
+        }
+    };
+
+    API.prototype.setEndpoint = function (string) {
+        this.endpoint = string;
+    };
+
     window.API = API;
 
     $(document).ready(function () {
@@ -696,12 +754,14 @@
         });
     });
 
-    function Test(operation, api) {
+    function Test(operation, api, apiObj) {
 
         var self = this;
 
         self.operation = operation;
         self.api = api;
+        // the API instance
+        self.apiObj = apiObj;
 
         function cleanUpKey(key) {
             return key.replace(/\W/g, '');
@@ -724,7 +784,7 @@
 
         function parseSecurityConfig() {
             // any requirement for identification?
-            if (self.config.requiresClientId || self.config.requiresClientSecret) {
+            if (self.config.requiresClientId || self.config.requiresClientSecret || !$.isEmptyObject(self.config.externalApiKeys)) {
                 $(".identificationSection", self.requestForm).removeClass("hidden");
             }
             // any requirement for client ID?
@@ -734,6 +794,29 @@
             // any requirement for client secret?
             if (self.config.requiresClientSecret) {
                 $(".identificationSection .clientSecret", self.requestForm).removeClass("hidden");
+            }
+            // any external apiKey security
+            if (!$.isEmptyObject(self.config.externalApiKeys)) {
+                $.each(self.config.externalApiKeys, function (key, value) {
+                    var keydiv = document.createElement('div');
+                    keydiv.className = "parameter externalSecurity";
+                    var labeldiv = document.createElement('div');
+                    labeldiv.className = 'parameterName';
+                    var labelText = document.createTextNode(value.name);
+                    labeldiv.appendChild(labelText);
+                    var input = document.createElement('input');
+                    input.setAttribute('type', 'password');
+                    input.setAttribute('name', value.name);
+                    input.setAttribute('id', key);
+                    input.className = 'parameterValue';
+                    keydiv.appendChild(labeldiv);
+                    keydiv.appendChild(input);
+                    $(".identificationSection .contrast", self.requestForm).append(keydiv);
+                });
+                if (!self.config.requiresClientId && !self.config.requiresClientSecret) {
+                    // hide the message to login if not using clientID or clientSecret
+                    $(".identificationSection .loginMessage", self.requestForm).addClass("hidden");
+                }
             }
             // any requirement for authorization?
             if (self.config.requiresBasicAuth || self.config.requiresOauth) {
@@ -751,20 +834,67 @@
 
                 if (self.config.oauthScopes) {
                     $(".apimScopes .oauthscopes", self.requestForm).empty();
-                    $.each(self.config.oauthScopes, function (key, value) {
+
+                    var scopesList = [];
+                    // If there are no operation level scopes defined, then just use the API ones
+                    if (!self.operation.definition["security"]){
+                        $.each(self.config.oauthScopes, function (key, value) {
+                            scopesList.push(value);
+                        });
+                    } else {
+                        // check if an oauth flow has been selected - we only want to show the scopes from that flow
+                        var flowName = null;
+                        if ($('.securityType', self.requestForm).is(":visible")){
+                           flowName = $('.securityType option:selected', self.requestForm).val();
+                           if (!flowName){
+                              // if not set by user, then just use the first one.
+                              flowName = $('.securityType option:first-child', self.requestForm).val();
+                           }
+                        }
+                        // loop through the security operations and add all those that are of type oauth and match the
+                        // selected (or first if none selected) flow name.
+                        for (var i=0; i<self.operation.definition.security.length; i++){
+                            $.each(self.operation.definition.security[i], function (key, value) {
+                                // check if key exists in api.securityDefinitions and check if it is type oauth
+                                if (api.securityDefinitions[key]){
+                                    if (api.securityDefinitions[key].type == "oauth2"){
+                                        // if flowname is not set then it means .securityType was not visible - so just
+                                        // show scopes, otherwise only show scopes for selected flow.
+                                        if (!flowName || (key == flowName)){
+                                            for (var x=0; x<value.length; x++){
+                                                scopesList.push(value[x]);
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    }
+
+                    for (var i=0; i<scopesList.length; i++){
                         var inputdiv = document.createElement('div');
                         var input = document.createElement('input');
                         input.setAttribute('type', 'checkbox');
                         input.setAttribute('name', 'scope[]');
-                        input.setAttribute('value', value);
+                        input.setAttribute('value', scopesList[i]);
                         input.setAttribute('checked', 'checked');
-                        input.value = value;
-                        var inputText = document.createTextNode(value);
+                        input.value = scopesList[i];
+                        var inputText = document.createTextNode(scopesList[i]);
                         inputdiv.appendChild(input);
                         inputdiv.appendChild(inputText);
                         $(".apimScopes .oauthscopes", self.requestForm).append(inputdiv);
-                    });
+                    }
+
                 }
+                // before filling out any OAuth URLs, replace any $(catalog.url) instances
+                var endpoint = self.apiObj.getEndpoint(self.api);
+                if (self.config.oauthAuthUrl) {
+                    self.config.oauthAuthUrl = self.config.oauthAuthUrl.replace('$(catalog.url)', endpoint);
+                }
+                if (self.config.oauthTokenUrl) {
+                    self.config.oauthTokenUrl = self.config.oauthTokenUrl.replace('$(catalog.url)', endpoint);
+                }
+
                 // any requirement for token refresh?
                 if (self.config.oauthFlow == "accessCode") {
                     $(".authorizationSection .apimAuthUrl .authurl", self.requestForm).text(self.config.oauthAuthUrl);
@@ -857,6 +987,7 @@
                 option.appendChild(optiontext);
                 $(".securitySelectionSection .apimSecurityType .securityType", self.requestForm).append(option);
             });
+
             // set to first option by default
             self.config = window.CommonAPI.getConfigurationForOperation(operation.definition, api.paths[operation.path], api, self.config.securityFlows[0]);
             parseSecurityConfig();
@@ -1248,7 +1379,11 @@
         if (requestForm.scheme) {
             scheme = requestForm.scheme;
         }
-        var targetUrl = scheme + "://" + this.api.host + this.api.basePath + this.operation.path;
+        var targetUrl = window.API.getEndpoint(this.api);
+        if (!targetUrl) {
+            targetUrl = scheme + "://" + this.api.host;
+        }
+        targetUrl = targetUrl + this.api.basePath + this.operation.path;
 
         // set up headers
         var headers = {};
@@ -1259,10 +1394,18 @@
             headers["Authorization"] = "Bearer " + requestForm.authToken;
         }
         if (this.config.requiresClientId && this.config.clientIdLocation == "header" && requestForm.apimClientId) {
-            headers["X-IBM-Client-Id"] = requestForm.apimClientId;
+            if (this.config.clientIdName) {
+                headers[this.config.clientIdName] = requestForm.apimClientId;
+            } else {
+                headers["X-IBM-Client-Id"] = requestForm.apimClientId;
+            }
         }
         if (this.config.requiresClientSecret && this.config.clientSecretLocation == "header" && requestForm.apimClientSecret) {
-            headers["X-IBM-Client-Secret"] = requestForm.apimClientSecret;
+            if (this.config.clientSecretName) {
+                headers[this.config.clientSecretName] = requestForm.apimClientSecret;
+            } else {
+                headers["X-IBM-Client-Secret"] = requestForm.apimClientSecret;
+            }
         }
 
         if (this.config.soapAction !== undefined) {
@@ -1290,48 +1433,87 @@
                 targetUrl = targetUrl.replace("{" + parameter.name + "}", requestForm['param' + parameter.name]);
             });
         }
+        // remove double //
+        targetUrl = targetUrl.replace(/(https?:\/\/)|(\/)+/g, "$1$2");
+
         // query parameters
         var queryParameters = parameters.filter(function (parameter) {
-            return (parameter.in == "query" && requestForm['param' + parameter.name] !== undefined);
+            return (parameter.in == "query");
         });
         var queryParametersAdded = (targetUrl.indexOf('?') >= 0);
         if (queryParameters.length > 0) {
             targetUrl += (queryParametersAdded) ? "&" : "?";
             queryParameters.forEach(function (parameter) {
-                if (parameter.name && requestForm['param' + parameter.name]) {
-                    targetUrl += parameter.name + "=" + requestForm['param' + parameter.name] + "&";
-                    queryParametersAdded = true;
+                if (parameter.name) {
+                    // if boolean then must be set to true or false
+                    if ((requestForm['param' + parameter.name] !== undefined && (!parameter.type || (parameter.type != "boolean" && !parameter.enum && requestForm['param' + parameter.name]))) || (parameter.type && parameter.type == "boolean" && (requestForm['param' + parameter.name] == "true" || requestForm['param' + parameter.name] == "false")) || (parameter.enum && parameter.enum.indexOf(requestForm['param' + parameter.name]) != -1)) {
+                        targetUrl += parameter.name + "=" + requestForm['param' + parameter.name] + "&";
+                        queryParametersAdded = true;
+                    } else if (parameter.type && parameter.type == "boolean" && parameter.required) {
+                        // purely here to catch required boolean fields that are set to false
+                        targetUrl += parameter.name + "=false&";
+                        queryParametersAdded = true;
+                    }
                 }
             });
             targetUrl = targetUrl.substring(0, targetUrl.length - 1);
         }
         if (this.config.requiresClientId && this.config.clientIdLocation == "query" && requestForm.apimClientId) {
+            var clientIdName = 'client_id';
+            if (this.config.clientIdName) {
+                clientIdName = this.config.clientIdName;
+            }
             if (queryParametersAdded) {
-                targetUrl += "&client_id=" + requestForm.apimClientId;
+                targetUrl += "&" + clientIdName + "=" + requestForm.apimClientId;
             } else {
-                targetUrl += "?client_id=" + requestForm.apimClientId;
+                targetUrl += "?" + clientIdName + "=" + requestForm.apimClientId;
                 queryParametersAdded = true;
             }
         }
         if (this.config.requiresClientSecret && this.config.clientSecretLocation == "query" && requestForm.apimClientSecret) {
+            var clientSecretName = 'client_secret';
+            if (this.config.clientSecretName) {
+                clientSecretName = this.config.clientSecretName;
+            }
             if (queryParametersAdded) {
-                targetUrl += "&client_secret=" + requestForm.apimClientSecret;
+                targetUrl += "&" + clientSecretName + "=" + requestForm.apimClientSecret;
             } else {
-                targetUrl += "?client_secret=" + requestForm.apimClientSecret;
+                targetUrl += "?" + clientSecretName + "=" + requestForm.apimClientSecret;
                 queryParametersAdded = true;
             }
         }
 
         // headers
-        headers['content-type'] = requestForm['content-type'];
+        if (requestForm['content-type']) {
+            headers['content-type'] = requestForm['content-type'];
+        }
         headers['accept'] = requestForm['accept'];
         var headerParameters = parameters.filter(function (parameter) {
             return (parameter.in == "header");
         });
         if (headerParameters.length > 0) {
             headerParameters.forEach(function (parameter) {
-                if (requestForm['param' + parameter.name]) {
+                if ((requestForm['param' + parameter.name] !== undefined && (!parameter.type || (parameter.type != "boolean" && !parameter.enum))) || (parameter.type && parameter.type == "boolean" && (requestForm['param' + parameter.name] == "true" || requestForm['param' + parameter.name] == "false")) || (parameter.enum && parameter.enum.indexOf(requestForm['param' + parameter.name]) != -1)) {
                     headers[parameter.name] = requestForm['param' + parameter.name];
+                } else if (parameter.type && parameter.type == "boolean" && parameter.required) {
+                    // purely here to catch required boolean fields that are set to false
+                    headers[parameter.name] = "false";
+                }
+            });
+        }
+
+        // handle external security
+        if (!$.isEmptyObject(this.config.externalApiKeys)) {
+            $.each(this.config.externalApiKeys, function (key, value) {
+                if (value.in == 'query') {
+                    if (queryParametersAdded) {
+                        targetUrl += "&" + value.name + "=" + requestForm[key];
+                    } else {
+                        targetUrl += "?" + value.name + "=" + requestForm[key];
+                        queryParametersAdded = true;
+                    }
+                } else if (value.in == 'header') {
+                    headers[value.name] = requestForm[key];
                 }
             });
         }
@@ -1350,8 +1532,11 @@
         } else if (formDataParameters.length > 0) {
             var formDataArray = [];
             formDataParameters.forEach(function (parameter) {
-                if (requestForm['param' + parameter.name]) {
+                if ((requestForm['param' + parameter.name] !== undefined && (!parameter.type || (parameter.type != "boolean" && !parameter.enum))) || (parameter.type && parameter.type == "boolean" && (requestForm['param' + parameter.name] == "true" || requestForm['param' + parameter.name] == "false")) || (parameter.enum && parameter.enum.indexOf(requestForm['param' + parameter.name]) != -1)) {
                     formDataArray.push(encodeURIComponent(parameter.name).replace(/%20/g, '+') + '=' + encodeURIComponent(requestForm['param' + parameter.name]).replace(/%20/g, '+'));
+                } else if (parameter.type && parameter.type == "boolean" && parameter.required) {
+                    // purely here to catch required boolean fields that are set to false
+                    formDataArray.push(encodeURIComponent(parameter.name).replace(/%20/g, '+') + "=" + encodeURIComponent("false"));
                 }
             });
             body = formDataArray.join('&');
@@ -1373,7 +1558,7 @@
             var requestHeaders = "";
             if (self.xhrOpts && self.xhrOpts.headers) {
                 Object.keys(self.xhrOpts.headers).forEach(function (headerName) {
-                    if (headerName == 'X-IBM-Client-Secret') {
+                    if (headerName == 'X-IBM-Client-Secret' || (self.config.clientSecretName && headerName == self.config.clientSecretName)) {
                         requestHeaders += headerName + ": ∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙∙\n";
                     } else if (headerName == 'Authorization') {
                         if (self.xhrOpts.headers[headerName].toLowerCase().indexOf("bearer") >= 0) {

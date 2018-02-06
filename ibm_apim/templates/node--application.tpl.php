@@ -49,8 +49,20 @@ drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/js/App.js', array(
 
       <?php print render($title_prefix); ?>
       <?php $showplaceholders = variable_get('ibm_apim_show_placeholder_images', 1); ?>
+      <?php $applifecycle_enabled = variable_get('ibm_apim_applifecycle_enabled', 0); ?>
 
       <div class="appTitleBar"><h1 class="appTitle"><?php print $title; ?></h1>
+        <?php if ($applifecycle_enabled == 1) : ?>
+          <div
+            class="applicationType <?php print drupal_html_class($application_type[0]['safe_value']); ?>"><?php print $application_type[0]['safe_value']; ?></div>
+          <?php if (strtoupper($application_type[0]['safe_value']) == 'DEVELOPMENT') : ?>
+            <?php if (!isset($application_promoteto[0]['safe_value'])) : ?>
+              <div class="promotionLink"><?php print $promotelink; ?></div>
+            <?php else: ?>
+              <div class="promotionLink"><?php print t('Pending Upgrade') ?></div>
+            <?php endif; ?>
+          <?php endif; ?>
+        <?php endif; ?>
         <div
           class="appTitleActions">
           <?php $analytics_enabled = variable_get('ibm_apim_show_analytics', 1);
@@ -176,7 +188,7 @@ drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/js/App.js', array(
                     </div>
                     <div class="credentialContainer">
                       <div class="credentialInfo">
-                        <label for="clientID"
+                        <label for="clientID<?php print $index; ?>"
                                class="label apimField apiClientID"><?php print t('Client ID'); ?></label>
                         <div id="app_client_id" class="app_client_id">
                           <input class="toggle-password"
@@ -188,19 +200,25 @@ drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/js/App.js', array(
                                    id="show-clientID<?php print $index; ?>"/>
                             <label
                               for="show-clientID<?php print $index; ?>"><?php print t('Show'); ?></label>
+                            <?php $ibm_apim_allow_clientidreset = variable_get('ibm_apim_allow_clientidreset', TRUE); ?>
+                            <?php if ($ibm_apim_allow_clientidreset == 1): ?>
                             &nbsp;&nbsp;&nbsp;&nbsp; <a class="buttonLink"
                                                         href="<?php print url("application/" . $application_apiid[0]['value'] . "/reset-clientid/" . $cred['id']); ?>"><?php print t('Reset'); ?></a>
+                            <?php endif; ?>
                           </div>
                         </div>
-                        <label for="clientSecret"
+                        <label for="clientSecret<?php print $index; ?>"
                                class="label apimField apiClientSecret"><?php print t('Client Secret'); ?></label>
                         <div class="client_secret">
                           <input id="clientSecret<?php print $index; ?>"
                                  class="clientSecretInput" disabled readonly/>
+                          <?php $ibm_apim_allow_clientsecretreset = variable_get('ibm_apim_allow_clientsecretreset', TRUE); ?>
+                          <?php if ($ibm_apim_allow_clientsecretreset == 1): ?>
                           <a class="buttonLink"
                              href="<?php print url("application/" . $application_apiid[0]['value'] . "/verify/" . $cred['id']); ?>"><?php print t('Verify'); ?></a>
                           &nbsp;&nbsp;&nbsp;&nbsp; <a class="buttonLink"
                                                       href="<?php print url("application/" . $application_apiid[0]['value'] . "/reset-secret/" . $cred['id']); ?>"><?php print t('Reset'); ?></a>
+                          <?php endif; ?>
                         </div>
                       </div>
                     </div>
@@ -210,13 +228,6 @@ drupal_add_js(drupal_get_path('module', 'ibm_apim') . '/js/App.js', array(
               </div>
             <?php endif; ?>
 
-            <div>
-              <?php if (is_array($customfields) && count($customfields) > 0) {
-                foreach ($customfields as $customfield) {
-                  print render($content[$customfield]);
-                }
-              } ?>
-            </div>
           </div>
         </div>
         <?php if (module_exists('product')) : ?>

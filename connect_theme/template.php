@@ -1,5 +1,5 @@
 <?php
-// cathay_theme
+// connect_theme
 // based on sky by Adaptivethemes.com
 
 /**
@@ -7,7 +7,7 @@
  *
  * @param $vars
  */
-function cathay_theme_preprocess_html(&$vars) {
+function connect_theme_preprocess_html(&$vars) {
   global $theme_key;
   $theme_name = $theme_key;
 
@@ -45,7 +45,7 @@ function cathay_theme_preprocess_html(&$vars) {
  *
  * @param $vars
  */
-function cathay_theme_process_html(&$vars) {
+function connect_theme_process_html(&$vars) {
   // Hook into the color module.
   if (module_exists('color')) {
     _color_html_alter($vars);
@@ -58,7 +58,7 @@ function cathay_theme_process_html(&$vars) {
  * @param $vars
  * @param $hook
  */
-function cathay_theme_preprocess_page(&$vars, $hook) {
+function connect_theme_preprocess_page(&$vars, $hook) {
   if ($vars['page']['footer'] || $vars['page']['four_first'] || $vars['page']['four_second'] || $vars['page']['four_third'] || $vars['page']['four_fourth']) {
     $vars['classes_array'][] = 'with-footer';
   }
@@ -80,7 +80,7 @@ function cathay_theme_preprocess_page(&$vars, $hook) {
  *
  * @param $vars
  */
-function cathay_theme_process_page(&$vars) {
+function connect_theme_process_page(&$vars) {
   // Hook into the color module.
   if (module_exists('color')) {
     _color_page_alter($vars);
@@ -92,7 +92,7 @@ function cathay_theme_process_page(&$vars) {
  *
  * @param $vars
  */
-function cathay_theme_preprocess_block(&$vars) {
+function connect_theme_preprocess_block(&$vars) {
   if ($vars['block']->module == 'superfish' || $vars['block']->module == 'nice_menu') {
     $vars['content_attributes_array']['class'][] = 'clearfix';
   }
@@ -109,7 +109,7 @@ function cathay_theme_preprocess_block(&$vars) {
  *
  * @param $vars
  */
-function cathay_theme_preprocess_node(&$vars) {
+function connect_theme_preprocess_node(&$vars) {
   // Add class if user picture exists
   if (!empty($vars['submitted']) && $vars['display_submitted']) {
     if ($vars['user_picture']) {
@@ -123,7 +123,7 @@ function cathay_theme_preprocess_node(&$vars) {
  *
  * @param $vars
  */
-function cathay_theme_preprocess_comment(&$vars) {
+function connect_theme_preprocess_comment(&$vars) {
   // Add class if user picture exists
   if ($vars['picture']) {
     $vars['header_attributes_array']['class'][] = 'with-user-picture';
@@ -135,7 +135,7 @@ function cathay_theme_preprocess_comment(&$vars) {
  *
  * @param $vars
  */
-function cathay_theme_process_region(&$vars) {
+function connect_theme_process_region(&$vars) {
   // Add the click handle inside region menu bar
   if ($vars['region'] === 'menu_bar') {
     $vars['inner_prefix'] = '<h2 class="menu-toggle"><a href="#">' . t('Menu') . '</a></h2>';
@@ -145,14 +145,14 @@ function cathay_theme_process_region(&$vars) {
 /**
  * @param $items
  */
-function cathay_theme_menu_alter(&$items) {
-  $items['user']['title callback'] = 'cathay_theme_user_menu_title';
+function connect_theme_menu_alter(&$items) {
+  $items['user']['title callback'] = 'connect_theme_user_menu_title';
 }
 
 /**
  * @return null|string
  */
-function cathay_theme_user_menu_title() {
+function connect_theme_user_menu_title() {
   global $user;
   return user_is_logged_in() ? $user->name : t('User account');
 }
@@ -161,7 +161,7 @@ function cathay_theme_user_menu_title() {
  * @param $variables
  * @return string
  */
-function cathay_theme_menu_tree__user_menu(&$variables) {
+function connect_theme_menu_tree__user_menu(&$variables) {
   global $user;
   drupal_add_js('jQuery(document).ready(function(){
       jQuery(".dropitmenu").dropit();
@@ -176,7 +176,7 @@ function cathay_theme_menu_tree__user_menu(&$variables) {
  *
  * @ingroup themeable
  */
-function cathay_theme_node_add_list($content) {
+function connect_theme_node_add_list($content) {
   $output = '';
 
   if (isset($content) && isset($content['content'])) {
@@ -203,7 +203,7 @@ function cathay_theme_node_add_list($content) {
  * Display full usernames not truncated ones
  * @param $vars
  */
-function cathay_theme_preprocess_username(&$vars) {
+function connect_theme_preprocess_username(&$vars) {
   // putting back what drupal core messed with
   $vars['name'] = check_plain($vars['name_raw']);
 }

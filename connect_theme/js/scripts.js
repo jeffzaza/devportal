@@ -14,7 +14,7 @@
     /**
      * Toggles the collapsible region.
      */
-    Drupal.behaviors.cathay_themeCollapsRegionToggle = {
+    Drupal.behaviors.connect_themeCollapsRegionToggle = {
         attach: function (context, settings) {
             $('.collapsible-toggle a, context').unbind('click').click(function () {
                 $('#section-collapsible').toggleClass('toggle-active').find('.region-collapsible').slideToggle('fast');
@@ -32,7 +32,7 @@
         }
     };
 
-    Drupal.behaviors.cathay_themeCollapsMenuToggle = {
+    Drupal.behaviors.connect_themeCollapsMenuToggle = {
         attach: function (context, settings) {
             $('.menu-toggle a, context').click(function () {
                 $('#menu-bar').toggleClass('toggle-active').find('nav').slideToggle('fast');
@@ -56,7 +56,7 @@
      * - Adds a .first-child class to the first paragraph in each wrapper.
      * - Adds a prompt containing the link to a comment for the permalink.
      */
-    Drupal.behaviors.cathay_themePosts = {
+    Drupal.behaviors.connect_themePosts = {
         attach: function (context, settings) {
             // Detects IE6-8.
             if (!jQuery.support.leadingWhitespace) {

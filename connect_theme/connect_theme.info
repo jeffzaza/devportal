@@ -453,5 +453,5 @@ settings[menu_bar_position]     = 'mbp-l'
 
 version = VERSION
 core = "7.x"
-project = "cathay_theme"
+project = "connect_theme"
 datestamp = "1395577162"

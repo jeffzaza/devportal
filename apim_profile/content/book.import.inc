@@ -42,14 +42,14 @@ function apim_profile_create_book() {
   $nav_blockid = db_query("SELECT bid FROM {block} WHERE module=:module AND delta=:delta AND theme=:theme", array(
     ':module' => 'book',
     ':delta' => 'navigation',
-    ':theme' => 'cathay_theme'
+    ':theme' => 'connect_theme'
   ))->fetchField();
   if (isset($nav_blockid) && is_numeric($nav_blockid)) {
     db_update('block')
       ->fields(array('region' => 'sidebar_second'))
       ->condition('module', 'book')
       ->condition('delta', 'navigation')
-      ->condition('theme', 'cathay_theme')
+      ->condition('theme', 'connect_theme')
       ->execute();
   }
   else {
@@ -60,7 +60,7 @@ function apim_profile_create_book() {
       'pages' => "",
       'module' => 'book',
       'delta' => 'navigation',
-      'theme' => 'cathay_theme'
+      'theme' => 'connect_theme'
     ))->execute();
   }
   $type = db_query("SELECT type FROM {block_node_type} WHERE module=:module AND delta=:delta", array(

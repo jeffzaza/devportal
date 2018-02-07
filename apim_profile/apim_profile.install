@@ -194,10 +194,10 @@ function apim_profile_install() {
   variable_set('default_nodes_main', "10");
 
   // Enable our theme and set as default
-  $themes = array('cathay_theme');
+  $themes = array('connect_theme');
   theme_enable($themes);
-  variable_set('theme_default', 'cathay_theme');
-  variable_set('ibm_apim_enable_cathay_theme', 1);
+  variable_set('theme_default', 'connect_theme');
+  variable_set('ibm_apim_enable_connect_theme', 1);
 
   // enable the adminimal admin theme
   theme_enable(array('adminimal'));
@@ -313,7 +313,7 @@ function apim_profile_install() {
     "menu-bar-float-left" => "Inline Float Left"
   ));
 
-  apim_profile_enable_cathay_theme();
+  apim_profile_enable_connect_theme();
 
   // Add url aliases for our custom nodes
   $add_alias = function ($node, $alias) {
@@ -539,7 +539,7 @@ product/*'
     'region' => 'sidebar_first',
     'module' => 'menu',
     'delta' => 'support-menu',
-    'theme' => 'cathay_theme'
+    'theme' => 'connect_theme'
   ))->execute();
 
   // Create Login menu
@@ -598,7 +598,7 @@ product/*
 application
 application/*
 taxonomy/*',
-    'theme' => 'cathay_theme'
+    'theme' => 'connect_theme'
   ))->execute();
   variable_set('apic_taxonomy_menu_block_1', array(
     'delta' => 1,
@@ -622,7 +622,7 @@ taxonomy/*',
     'delta' => '2',
     'visibility' => 1,
     'pages' => 'taxonomy/*',
-    'theme' => 'cathay_theme'
+    'theme' => 'connect_theme'
   ))->execute();
   variable_set('apic_taxonomy_menu_block_2', array(
     'delta' => 2,
@@ -1571,19 +1571,19 @@ function apim_profile_install_finished(&$install_state) {
   return $output;
 }
 
-function apim_profile_enable_cathay_theme() {
+function apim_profile_enable_connect_theme() {
   // set login menu to show on header
   $loginid = db_query("SELECT bid FROM {block} WHERE module=:module AND delta=:delta AND theme=:theme", array(
     ':module' => 'menu',
     ':delta' => 'login-menu',
-    ':theme' => 'cathay_theme'
+    ':theme' => 'connect_theme'
   ))->fetchField();
   if (isset($loginid) && is_numeric($loginid)) {
     db_update('block')
       ->fields(array('css_class' => '', 'region' => 'header'))
       ->condition('module', 'menu')
       ->condition('delta', 'login-menu')
-      ->condition('theme', 'cathay_theme')
+      ->condition('theme', 'connect_theme')
       ->execute();
   }
   else {
@@ -1594,7 +1594,7 @@ function apim_profile_enable_cathay_theme() {
       'pages' => "",
       'module' => 'menu',
       'delta' => 'login-menu',
-      'theme' => 'cathay_theme'
+      'theme' => 'connect_theme'
     ))->execute();
   }
 
@@ -1602,7 +1602,7 @@ function apim_profile_enable_cathay_theme() {
   $followid = db_query("SELECT bid FROM {block} WHERE module=:module AND delta=:delta AND theme=:theme", array(
     ':module' => 'follow',
     ':delta' => 'user',
-    ':theme' => 'cathay_theme'
+    ':theme' => 'connect_theme'
   ))->fetchField();
   if (isset($followid) && is_numeric($followid)) {
     db_update('block')
@@ -1615,7 +1615,7 @@ function apim_profile_enable_cathay_theme() {
       ))
       ->condition('module', 'follow')
       ->condition('delta', 'user')
-      ->condition('theme', 'cathay_theme')
+      ->condition('theme', 'connect_theme')
       ->execute();
   }
   else {
@@ -1624,7 +1624,7 @@ function apim_profile_enable_cathay_theme() {
       'region' => 'sidebar_second',
       'module' => 'follow',
       'delta' => 'user',
-      'theme' => 'cathay_theme',
+      'theme' => 'connect_theme',
       'title' => '',
       'pages' => "user/*",
       'visibility' => 1,
@@ -1637,7 +1637,7 @@ function apim_profile_enable_cathay_theme() {
   $mainmenuid = db_query("SELECT bid FROM {block} WHERE module=:module AND delta=:delta AND theme=:theme", array(
     ':module' => 'system',
     ':delta' => 'main-menu',
-    ':theme' => 'cathay_theme'
+    ':theme' => 'connect_theme'
   ))->fetchField();
   if (isset($mainmenuid) && is_numeric($mainmenuid)) {
     db_update('block')
@@ -1649,7 +1649,7 @@ function apim_profile_enable_cathay_theme() {
       ))
       ->condition('module', 'system')
       ->condition('delta', 'main-menu')
-      ->condition('theme', 'cathay_theme')
+      ->condition('theme', 'connect_theme')
       ->execute();
   }
   else {
@@ -1663,7 +1663,7 @@ function apim_profile_enable_cathay_theme() {
       'title' => "",
       'weight' => -12,
       'css_class' => "",
-      'theme' => 'cathay_theme'
+      'theme' => 'connect_theme'
     ))->execute();
   }
 
@@ -1671,7 +1671,7 @@ function apim_profile_enable_cathay_theme() {
   $searchid = db_query("SELECT bid FROM {block} WHERE module=:module AND delta=:delta AND theme=:theme", array(
     ':module' => 'search',
     ':delta' => 'form',
-    ':theme' => 'cathay_theme'
+    ':theme' => 'connect_theme'
   ))->fetchField();
   if (isset($searchid) && is_numeric($searchid)) {
     db_update('block')
@@ -1682,7 +1682,7 @@ function apim_profile_enable_cathay_theme() {
       ))
       ->condition('module', 'search')
       ->condition('delta', 'form')
-      ->condition('theme', 'cathay_theme')
+      ->condition('theme', 'connect_theme')
       ->execute();
   }
   else {
@@ -1696,7 +1696,7 @@ function apim_profile_enable_cathay_theme() {
       'title' => "",
       'weight' => -11,
       'css_class' => "",
-      'theme' => 'cathay_theme'
+      'theme' => 'connect_theme'
     ))->execute();
   }
 
@@ -1704,14 +1704,14 @@ function apim_profile_enable_cathay_theme() {
   $loginblockid = db_query("SELECT bid FROM {block} WHERE module=:module AND delta=:delta AND theme=:theme", array(
     ':module' => 'user',
     ':delta' => 'login',
-    ':theme' => 'cathay_theme'
+    ':theme' => 'connect_theme'
   ))->fetchField();
   if (isset($loginblockid) && is_numeric($loginblockid)) {
     db_update('block')
       ->fields(array('region' => -1))
       ->condition('module', 'user')
       ->condition('delta', 'login')
-      ->condition('theme', 'cathay_theme')
+      ->condition('theme', 'connect_theme')
       ->execute();
   }
   else {
@@ -1724,7 +1724,7 @@ function apim_profile_enable_cathay_theme() {
       'pages' => "",
       'title' => "<none>",
       'css_class' => "",
-      'theme' => 'cathay_theme'
+      'theme' => 'connect_theme'
     ))->execute();
   }
 
@@ -1732,7 +1732,7 @@ function apim_profile_enable_cathay_theme() {
   $usermenuid = db_query("SELECT bid FROM {block} WHERE module=:module AND delta=:delta AND theme=:theme", array(
     ':module' => 'system',
     ':delta' => 'user-menu',
-    ':theme' => 'cathay_theme'
+    ':theme' => 'connect_theme'
   ))->fetchField();
   if (isset($usermenuid) && is_numeric($usermenuid)) {
     db_update('block')
@@ -1744,7 +1744,7 @@ function apim_profile_enable_cathay_theme() {
       ))
       ->condition('module', 'system')
       ->condition('delta', 'user-menu')
-      ->condition('theme', 'cathay_theme')
+      ->condition('theme', 'connect_theme')
       ->execute();
   }
   else {
@@ -1758,13 +1758,13 @@ function apim_profile_enable_cathay_theme() {
       'title' => "<none>",
       'css_class' => "",
       'weight' => 10,
-      'theme' => 'cathay_theme'
+      'theme' => 'connect_theme'
     ))->execute();
   }
   $orgselectid = db_query("SELECT bid FROM {block} WHERE module=:module AND delta=:delta AND theme=:theme", array(
     ':module' => 'ibm_apim',
     ':delta' => 'developer_org_select',
-    ':theme' => 'cathay_theme'
+    ':theme' => 'connect_theme'
   ))->fetchField();
   if (isset($orgselectid) && is_numeric($orgselectid)) {
     db_update('block')
@@ -1776,7 +1776,7 @@ function apim_profile_enable_cathay_theme() {
       ))
       ->condition('module', 'ibm_apim')
       ->condition('delta', 'developer_org_select')
-      ->condition('theme', 'cathay_theme')
+      ->condition('theme', 'connect_theme')
       ->execute();
   }
   else {
@@ -1790,13 +1790,13 @@ function apim_profile_enable_cathay_theme() {
       'title' => "<none>",
       'css_class' => "",
       'weight' => 5,
-      'theme' => 'cathay_theme'
+      'theme' => 'connect_theme'
     ))->execute();
   }
   $notificationid = db_query("SELECT bid FROM {block} WHERE module=:module AND delta=:delta AND theme=:theme", array(
     ':module' => 'ibm_apim',
     ':delta' => 'apim_notification_count',
-    ':theme' => 'cathay_theme'
+    ':theme' => 'connect_theme'
   ))->fetchField();
   if (isset($notificationid) && is_numeric($notificationid)) {
     db_update('block')
@@ -1808,7 +1808,7 @@ function apim_profile_enable_cathay_theme() {
       ))
       ->condition('module', 'ibm_apim')
       ->condition('delta', 'apim_notification_count')
-      ->condition('theme', 'cathay_theme')
+      ->condition('theme', 'connect_theme')
       ->execute();
   }
   else {
@@ -1822,7 +1822,7 @@ function apim_profile_enable_cathay_theme() {
       'title' => "<none>",
       'css_class' => "",
       'weight' => 15,
-      'theme' => 'cathay_theme'
+      'theme' => 'connect_theme'
     ))->execute();
   }
 
@@ -1847,12 +1847,12 @@ function apim_profile_enable_cathay_theme() {
     ->condition('region', 'footer')
     ->condition('module', 'system')
     ->condition('delta', 'powered-by')
-    ->condition('theme', 'cathay_theme')
+    ->condition('theme', 'connect_theme')
     ->execute();
 
   if (isset($blockid)) {
     $new_blockid = db_query("SELECT bid FROM {block} WHERE theme=:theme AND module=:module AND delta=:delta", array(
-      ':theme' => 'cathay_theme',
+      ':theme' => 'connect_theme',
       ':module' => 'block',
       'delta' => $blockid
     ))->fetchField();
@@ -1869,7 +1869,7 @@ function apim_profile_enable_cathay_theme() {
         'title' => "<none>",
         'css_class' => "",
         'i18n_mode' => 1,
-        'theme' => 'cathay_theme'
+        'theme' => 'connect_theme'
       ))->execute();
     }
     // Update block languages
@@ -1897,7 +1897,7 @@ function apim_profile_enable_cathay_theme() {
   // set theme settings for logos
   // Must do this before we ensure the layout is correct
   // or we still end up with a single column
-  $theme_name = 'cathay_theme';
+  $theme_name = 'connect_theme';
   $var_name = 'theme_' . $theme_name . '_settings';
   $settings = variable_get($var_name, array());
   $settings['default_logo'] = 1;
@@ -1963,7 +1963,7 @@ function apim_profile_enable_cathay_theme() {
   // Ensure that the layout is correct for the theme
   module_load_include('inc', 'system', 'system.admin');
   $form_state = form_state_defaults();
-  $form_state['build_info']['args'][] = 'cathay_theme';
+  $form_state['build_info']['args'][] = 'connect_theme';
   $form_state['values'] = array(
     'global_files_path' => 'public_files',
     'enable_custom_media_queries' => 1,
@@ -1983,7 +1983,7 @@ function apim_profile_enable_cathay_theme() {
   // set favicon for admin theme (seven) too
   $var_name = 'theme_seven_settings';
   $settings = variable_get($var_name, array());
-  $settings['favicon_path'] = drupal_get_path('theme', 'cathay_theme') . '/favicon.ico';
+  $settings['favicon_path'] = drupal_get_path('theme', 'connect_theme') . '/favicon.ico';
   $settings['default_favicon'] = 0;
   $settings['favicon_mimetype'] = "image/vnd.microsoft.icon";
   variable_set($var_name, $settings);
@@ -3382,12 +3382,12 @@ js/admin_menu/cache/*';
     _apim_profile_disable_frontpage();
     variable_set('ibm_apim_disable_frontpage', 1);
   }
-  if (variable_get('ibm_apim_enable_cathay_theme', NULL) == NULL) {
+  if (variable_get('ibm_apim_enable_connect_theme', NULL) == NULL) {
     $theme_default = variable_get('theme_default');
     if (isset($theme_default) && $theme_default == 'ibm_apim_theme') {
-      theme_enable(array('cathay_theme'));
-      variable_set('theme_default', 'cathay_theme');
-      apim_profile_enable_cathay_theme();
+      theme_enable(array('connect_theme'));
+      variable_set('theme_default', 'connect_theme');
+      apim_profile_enable_connect_theme();
       $path = dirname(__FILE__);
       require_once $path . '/content/welcome.page.inc';
       apim_profile_migrate_frontpage();
@@ -3395,13 +3395,13 @@ js/admin_menu/cache/*';
         ->fields(array('css_class' => ""))
         ->condition('module', 'system')
         ->condition('delta', 'main-menu')
-        ->condition('theme', 'cathay_theme')
+        ->condition('theme', 'connect_theme')
         ->execute();
       db_update('block')
         ->fields(array('css_class' => ""))
         ->condition('module', 'search')
         ->condition('delta', 'form')
-        ->condition('theme', 'cathay_theme')
+        ->condition('theme', 'connect_theme')
         ->execute();
       // check if banner block has been updated, if not then use our new look
       $beans = bean_get_all_beans();
@@ -3429,7 +3429,7 @@ js/admin_menu/cache/*';
         }
       }
     }
-    variable_set('ibm_apim_enable_cathay_theme', 1);
+    variable_set('ibm_apim_enable_connect_theme', 1);
   }
 
   if (variable_get('ibm_apim_v5_apiinner_fields_upgrade', NULL) == NULL) {
@@ -3724,7 +3724,7 @@ js/admin_menu/cache/*';
     }
     $bid = db_query("SELECT bid FROM {block} WHERE module=:module AND region=:region AND theme=:theme", array(
       ':module' => 'apic_taxonomy_menu_block',
-      ':theme' => 'cathay_theme',
+      ':theme' => 'connect_theme',
       ':region' => 'collapsible'
     ))->fetchField();
     if (isset($bid)) {
@@ -3742,7 +3742,7 @@ taxonomy/*'
         ))
         ->condition('module', 'apic_taxonomy_menu_block')
         ->condition('region', 'collapsible')
-        ->condition('theme', 'cathay_theme')
+        ->condition('theme', 'connect_theme')
         ->execute();
     } else {
       db_insert('block')->fields(array(
@@ -3760,7 +3760,7 @@ product/*
 application
 application/*
 taxonomy/*',
-        'theme' => 'cathay_theme'
+        'theme' => 'connect_theme'
       ))->execute();
     }
     variable_set('apic_taxonomy_menu_block_1', array(
@@ -3808,7 +3808,7 @@ taxonomy/*'
       'delta' => $next,
       'visibility' => 1,
       'pages' => 'taxonomy/*',
-      'theme' => 'cathay_theme'
+      'theme' => 'connect_theme'
     ))->execute();
     variable_set('apic_taxonomy_menu_block_' . $next, array(
       'delta' => $next,

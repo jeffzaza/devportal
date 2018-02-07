@@ -20,6 +20,7 @@ stylesheets[all][] = css/comments.css
 stylesheets[all][] = css/fields.css
 stylesheets[all][] = css/blocks.css
 stylesheets[all][] = css/navigation.css
+stylesheets[all][] = css/cathay_holdings
 stylesheets[all][] = color/colors.css
 stylesheets[all][] = css/connect.settings.style.css
 stylesheets[print][] = css/print.css

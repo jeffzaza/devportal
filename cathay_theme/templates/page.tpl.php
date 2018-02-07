@@ -4,6 +4,63 @@
 
   <header id="header" class="clearfix" role="banner">
 
+  <nav class="site-menu">
+	<div class="container">
+		<ul>
+
+			<li>
+				<a href="https://www.cathayholdings.com/holdings" enclosing-tag="fhmegamenu-sitemenu" title="國泰金控" target="_blank" id="lnk_fhmegamenu-sitemenu_Reference_國泰金控">
+                            國泰金控
+				</a>
+			</li>
+
+			<li>
+				<a href="https://www.cathaylife.com.tw" enclosing-tag="fhmegamenu-sitemenu" title="國泰人壽" target="_blank" id="lnk_fhmegamenu-sitemenu_Reference_國泰人壽">
+                            國泰人壽
+				</a>
+			</li>
+
+			<li>
+				<a href="https://www.cathaybk.com.tw/cathaybk" enclosing-tag="fhmegamenu-sitemenu" title="國泰世華銀行" id="lnk_fhmegamenu-sitemenu_Reference_國泰世華銀行">
+                            國泰世華銀行
+				</a>
+			</li>
+
+			<li>
+				<a href="https://www.cathay-ins.com.tw" enclosing-tag="fhmegamenu-sitemenu" title="國泰產險" target="_blank" id="lnk_fhmegamenu-sitemenu_Reference_國泰產險">
+                            國泰產險
+				</a>
+			</li>
+
+			<li>
+				<a href="https://www.cathaysec.com.tw" enclosing-tag="fhmegamenu-sitemenu" target="_blank" id="lnk_fhmegamenu-sitemenu_Reference">
+                            國泰綜合證券
+				</a>
+			</li>
+
+			<li>
+				<a href="https://www.cathaysite.com.tw" enclosing-tag="fhmegamenu-sitemenu" target="_blank" id="lnk_fhmegamenu-sitemenu_Reference">
+                            國泰投信
+				</a>
+			</li>
+
+			<li>
+				<a href="https://www.cathayconsult.com.tw" enclosing-tag="fhmegamenu-sitemenu" target="_blank" id="lnk_fhmegamenu-sitemenu_Reference">
+                            國泰投顧
+				</a>
+			</li>
+
+
+			<li class="lang">
+				<a href="/en/holdings" id="layout_0_header_menu_0_RepLanguage_HlkLang_0" class="lang en" style="width: 60px; font-size: 12px;">
+                            English
+				</a>
+			</li>
+
+		</ul>
+	</div>
+</nav>
+  
     <?php if ($site_logo || $site_name || $site_slogan): ?>
       <!-- start: Branding -->
       <div id="branding" class="branding-elements clearfix">

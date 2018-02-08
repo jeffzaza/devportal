@@ -3,7 +3,7 @@
   <?php print render($page['top_menu']); ?>
 
   <header id="header" class="clearfix" role="banner">
-
+<!--
   <nav class="site-menu">
 	<div class="container">
 		<ul>
@@ -60,7 +60,7 @@
 		</ul>
 	</div>
 </nav>
-  
+-->
     <?php if ($site_logo || $site_name || $site_slogan): ?>
       <!-- start: Branding -->
       <div id="branding" class="branding-elements clearfix">

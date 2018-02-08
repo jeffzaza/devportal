@@ -10,7 +10,6 @@ screenshot  = screenshot.png
 
 
 ;----------// CSS
-
 stylesheets[all][] = css/html-elements.css
 stylesheets[all][] = css/forms.css
 stylesheets[all][] = css/tables.css
@@ -20,9 +19,9 @@ stylesheets[all][] = css/comments.css
 stylesheets[all][] = css/fields.css
 stylesheets[all][] = css/blocks.css
 stylesheets[all][] = css/navigation.css
-stylesheets[all][] = css/cathay_holdings
 stylesheets[all][] = color/colors.css
 stylesheets[all][] = css/connect.settings.style.css
+;stylesheets[all][] = css/common.css
 stylesheets[print][] = css/print.css
 
 ; Internet Explorer Stylesheets
